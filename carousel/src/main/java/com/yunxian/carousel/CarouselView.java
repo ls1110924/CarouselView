@@ -32,10 +32,12 @@ public class CarouselView extends FrameLayout {
     private CarouselAdapter mAdapter;
     private DataSetObserver mDataSetObserver;
 
+    private int startIndex;
+
     // 切换动画
     private final Animation mInAnimation;
     private final Animation mOutAnimation;
-
+    // 轮播间隔时长
     private int mCarouselInterval;
 
     // 通知执行轮播的Handler以及轮播通知
@@ -80,36 +82,45 @@ public class CarouselView extends FrameLayout {
             mAdapter.unregisterDataSetObserver(mDataSetObserver);
         }
 
+        startIndex = 0;
+
         mAdapter = adapter;
 
         mMainView.removeAllViews();
         mMainView.setVisibility(VISIBLE);
-        mMainView.setWeightSum(mAdapter.getItemViewCountOnSinglePage());
 
         mReserveView.removeAllViews();
         mReserveView.setVisibility(INVISIBLE);
-        mReserveView.setWeightSum(mAdapter.getItemViewCountOnSinglePage());
 
-        if (mAdapter.getCount() <= mAdapter.getItemViewCountOnSinglePage()) {
+        if (mAdapter != null) {
+            mDataSetObserver = new AdapterDataSetObserver();
+            mAdapter.registerDataSetObserver(mDataSetObserver);
 
-            fillItemView(mMainView, 0, mAdapter.getCount(), mAdapter.getCount(), mAdapter);
+            mMainView.setWeightSum(mAdapter.getItemViewCountOnSinglePage());
+            mReserveView.setWeightSum(mAdapter.getItemViewCountOnSinglePage());
 
-        } else {
-            int pageCount = mAdapter.getItemViewCountOnSinglePage();
+            if (mAdapter.getCount() <= mAdapter.getItemViewCountOnSinglePage()) {
 
-            fillItemView(mMainView, 0, pageCount, mAdapter.getCount(), mAdapter);
-            fillItemView(mReserveView, pageCount, pageCount, mAdapter.getCount(), mAdapter);
+                buildItemView(mMainView, 0, mAdapter.getCount(), mAdapter.getCount(), mAdapter);
 
+            } else {
+                final int pageCount = mAdapter.getItemViewCountOnSinglePage();
+
+                buildItemView(mMainView, 0, pageCount, mAdapter.getCount(), mAdapter);
+                startIndex = pageCount;
+                buildItemView(mReserveView, startIndex, pageCount, mAdapter.getCount(), mAdapter);
+            }
+
+            mUpdateHandler.postDelayed(mCarouselRunnable, mCarouselInterval);
         }
-
 
     }
 
-    private void fillItemView(LinearLayout mContain, int start, int count, int amount, CarouselAdapter mAdapter) {
+    private void buildItemView(LinearLayout mContain, int start, int count, int amount, CarouselAdapter mAdapter) {
 
         for (int i = 0; i < count; i++) {
             int itemIndex = (start + i) % amount;
-            View mChildView = mAdapter.getView(itemIndex, null, mMainView);
+            View mChildView = mAdapter.getView(itemIndex, null, mContain);
             if (mChildView == null) {
                 throw new NullPointerException();
             }
@@ -118,6 +129,21 @@ public class CarouselView extends FrameLayout {
         }
 
     }
+
+    private void fillItemView(LinearLayout mContain, int start, int count, int amount, CarouselAdapter mAdapter) {
+
+        for (int i = 0; i < count; i++) {
+            int itemIndex = (start + i) % amount;
+            View mChildView = mContain.getChildAt(i);
+            mChildView = mAdapter.getView(itemIndex, mChildView, mContain);
+            if (mChildView == null) {
+                throw new NullPointerException();
+            }
+            setItemViewLayoutParams(mChildView, itemIndex);
+        }
+
+    }
+
 
     /**
      * 获取轮播间隔时长，单位：毫秒
@@ -150,7 +176,10 @@ public class CarouselView extends FrameLayout {
             mAdapter.registerDataSetObserver(mDataSetObserver);
         }
 
-        mUpdateHandler.post(mCarouselRunnable);
+        if (mAdapter != null) {
+            mUpdateHandler.post(mCarouselRunnable);
+        }
+
     }
 
     @Override
@@ -190,6 +219,40 @@ public class CarouselView extends FrameLayout {
 
         @Override
         public void run() {
+
+            if (mAdapter == null) {
+                return;
+            }
+
+            startIndex = startIndex % mAdapter.getCount();
+            fillItemView(mReserveView, startIndex, mAdapter.getItemViewCountOnSinglePage(), mAdapter.getCount(), mAdapter);
+
+            mMainView.startAnimation(mOutAnimation);
+
+            mReserveView.setVisibility(VISIBLE);
+            mInAnimation.setAnimationListener(new Animation.AnimationListener() {
+                @Override
+                public void onAnimationStart(Animation animation) {
+                }
+
+                @Override
+                public void onAnimationEnd(Animation animation) {
+                    mMainView.setVisibility(INVISIBLE);
+
+                    LinearLayout temp = mMainView;
+                    mMainView = mReserveView;
+                    mReserveView = temp;
+
+                    mInAnimation.setAnimationListener(null);
+
+                    mUpdateHandler.postDelayed(CarouselRunnable.this, mCarouselInterval);
+                }
+
+                @Override
+                public void onAnimationRepeat(Animation animation) {
+                }
+            });
+            mReserveView.startAnimation(mInAnimation);
 
         }
     }
