@@ -24,7 +24,7 @@ public abstract class BaseFragmentActivity extends FragmentActivity {
      * {@link #onViewLongClick(View)}、{@link #onAdapterViewItemClick(AdapterView, View, int, long)}、
      * {@link #onAdapterViewItemLongClick(AdapterView, View, int, long)}这四个方法即可。
      */
-    protected final CommonCallbackListener mCommonListener = new CommonCallbackListener();
+    protected final CommonCallbackListener mBaseCommonListener = new CommonCallbackListener();
 
     /**
      * 不提供覆写本方法，若需覆写请覆写{@link #onCreateImpl(Bundle)}

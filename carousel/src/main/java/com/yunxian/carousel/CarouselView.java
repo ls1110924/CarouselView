@@ -64,11 +64,13 @@ public class CarouselView extends FrameLayout {
 
     private void init(Context context) {
         mMainView = new LinearLayout(context);
+        mMainView.setOrientation(LinearLayout.VERTICAL);
         addView(mMainView,
                 new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.MATCH_PARENT));
 
         mReserveView = new LinearLayout(context);
+        mReserveView.setOrientation(LinearLayout.VERTICAL);
         mReserveView.setVisibility(INVISIBLE);
         addView(mReserveView,
                 new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
@@ -109,9 +111,10 @@ public class CarouselView extends FrameLayout {
                 buildItemView(mMainView, 0, pageCount, mAdapter.getCount(), mAdapter);
                 startIndex = pageCount;
                 buildItemView(mReserveView, startIndex, pageCount, mAdapter.getCount(), mAdapter);
+
+                mUpdateHandler.postDelayed(mCarouselRunnable, mCarouselInterval);
             }
 
-            mUpdateHandler.postDelayed(mCarouselRunnable, mCarouselInterval);
         }
 
     }
@@ -125,7 +128,7 @@ public class CarouselView extends FrameLayout {
                 throw new NullPointerException();
             }
             setItemViewLayoutParams(mChildView, itemIndex);
-            mMainView.addView(mChildView);
+            mContain.addView(mChildView);
         }
 
     }
@@ -176,9 +179,10 @@ public class CarouselView extends FrameLayout {
             mAdapter.registerDataSetObserver(mDataSetObserver);
         }
 
-        if (mAdapter != null) {
-            mUpdateHandler.post(mCarouselRunnable);
-        }
+//        if (mAdapter != null) {
+//
+//            mUpdateHandler.post(mCarouselRunnable);
+//        }
 
     }
 
@@ -226,6 +230,7 @@ public class CarouselView extends FrameLayout {
 
             startIndex = startIndex % mAdapter.getCount();
             fillItemView(mReserveView, startIndex, mAdapter.getItemViewCountOnSinglePage(), mAdapter.getCount(), mAdapter);
+            startIndex += mAdapter.getItemViewCountOnSinglePage();
 
             mMainView.startAnimation(mOutAnimation);
 
