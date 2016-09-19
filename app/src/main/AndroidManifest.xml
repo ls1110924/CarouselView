@@ -16,6 +16,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".TestCarouselActivity" />
+        <activity android:name=".EmptyActivity" />
     </application>
 
 </manifest>

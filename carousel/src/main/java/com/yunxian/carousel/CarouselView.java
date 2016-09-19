@@ -4,6 +4,7 @@ import android.content.Context;
 import android.database.DataSetObserver;
 import android.os.Handler;
 import android.os.Looper;
+import android.support.annotation.NonNull;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewGroup;
@@ -79,10 +80,17 @@ public class CarouselView extends FrameLayout {
         mCarouselInterval = CAROUSEL_INTERVAL;
     }
 
+    /**
+     * 设置适配器
+     *
+     * @param adapter 轮播控件适配器对象
+     */
     public void setAdapter(CarouselAdapter adapter) {
         if (mAdapter != null && mDataSetObserver != null) {
             mAdapter.unregisterDataSetObserver(mDataSetObserver);
         }
+
+        closeCarousel();
 
         startIndex = 0;
 
@@ -98,28 +106,60 @@ public class CarouselView extends FrameLayout {
             mDataSetObserver = new AdapterDataSetObserver();
             mAdapter.registerDataSetObserver(mDataSetObserver);
 
-            mMainView.setWeightSum(mAdapter.getItemViewCountOnSinglePage());
-            mReserveView.setWeightSum(mAdapter.getItemViewCountOnSinglePage());
-
-            if (mAdapter.getCount() <= mAdapter.getItemViewCountOnSinglePage()) {
-
-                buildItemView(mMainView, 0, mAdapter.getCount(), mAdapter.getCount(), mAdapter);
-
-            } else {
-                final int pageCount = mAdapter.getItemViewCountOnSinglePage();
-
-                buildItemView(mMainView, 0, pageCount, mAdapter.getCount(), mAdapter);
-                startIndex = pageCount;
-                buildItemView(mReserveView, startIndex, pageCount, mAdapter.getCount(), mAdapter);
-
-                mUpdateHandler.postDelayed(mCarouselRunnable, mCarouselInterval);
-            }
-
+            startCarousel(true);
         }
 
     }
 
-    private void buildItemView(LinearLayout mContain, int start, int count, int amount, CarouselAdapter mAdapter) {
+    /**
+     * 重构轮播子视图。当设置了新的Adapter时，需要重新构建新的轮播内容视图，
+     * 否则复用旧轮播内容视图。
+     *
+     * @param mAdapter 适配器对象
+     * @param rebuild  是否重新构建新的轮播内容视图
+     * @return 内容是否足够多，需要开启轮播通知
+     */
+    private boolean rebuildItemView(@NonNull CarouselAdapter mAdapter, boolean rebuild) {
+        mMainView.setWeightSum(mAdapter.getItemViewCountOnSinglePage());
+        mReserveView.setWeightSum(mAdapter.getItemViewCountOnSinglePage());
+
+        startIndex = 0;
+
+        if (mAdapter.getCount() <= mAdapter.getItemViewCountOnSinglePage()) {
+
+            if (rebuild) {
+                buildItemViewForContain(mMainView, startIndex, mAdapter.getCount(), mAdapter.getCount(), mAdapter);
+            } else {
+                fillItemView(mMainView, startIndex, mAdapter.getCount(), mAdapter.getCount(), mAdapter);
+            }
+
+            return false;
+        } else {
+            final int pageCount = mAdapter.getItemViewCountOnSinglePage();
+
+            if (rebuild) {
+                buildItemViewForContain(mMainView, startIndex, pageCount, mAdapter.getCount(), mAdapter);
+                startIndex += pageCount;
+                buildItemViewForContain(mReserveView, startIndex, pageCount, mAdapter.getCount(), mAdapter);
+            } else {
+                fillItemView(mMainView, startIndex, pageCount, mAdapter.getCount(), mAdapter);
+                startIndex += pageCount;
+            }
+
+            return true;
+        }
+    }
+
+    /**
+     * 构建子视图
+     *
+     * @param mContain 被填充子视图的容器
+     * @param start    起始索引值
+     * @param count    添加的子视图数量
+     * @param amount   子视图总数
+     * @param mAdapter 适配器对象
+     */
+    private void buildItemViewForContain(LinearLayout mContain, int start, int count, int amount, CarouselAdapter mAdapter) {
 
         for (int i = 0; i < count; i++) {
             int itemIndex = (start + i) % amount;
@@ -133,6 +173,15 @@ public class CarouselView extends FrameLayout {
 
     }
 
+    /**
+     * 填充子视图内容
+     *
+     * @param mContain 被填充子视图的容器
+     * @param start    起始索引值
+     * @param count    添加的子视图数量
+     * @param amount   子视图总数
+     * @param mAdapter 适配器对象
+     */
     private void fillItemView(LinearLayout mContain, int start, int count, int amount, CarouselAdapter mAdapter) {
 
         for (int i = 0; i < count; i++) {
@@ -166,9 +215,52 @@ public class CarouselView extends FrameLayout {
         if (mCarouselInterval <= 0) {
             mCarouselInterval = CAROUSEL_INTERVAL;
         }
+        if (this.mCarouselInterval == mCarouselInterval) {
+            return;
+        }
         this.mCarouselInterval = mCarouselInterval;
+
+        closeCarousel();
+        startCarousel(false);
     }
 
+    // 是否正在轮播状态的标记变量
+    private volatile boolean carouseling = false;
+
+    /**
+     * 启动轮播。当重新设置了新的Adapter时，需要重新构建新的视图
+     *
+     * @param rebuild 是否需要重新构建子视图
+     */
+    private void startCarousel(boolean rebuild) {
+        // 如果已经启动了，就无需再启动
+        if (carouseling) {
+            return;
+        }
+
+        if (mAdapter == null) {
+            return;
+        }
+
+        startIndex = 0;
+
+        if (rebuildItemView(mAdapter, rebuild)) {
+            mUpdateHandler.postDelayed(mCarouselRunnable, mCarouselInterval);
+        }
+
+        carouseling = true;
+    }
+
+    /**
+     * 关闭轮播
+     */
+    private void closeCarousel() {
+        if (carouseling) {
+            mUpdateHandler.removeCallbacks(mCarouselRunnable);
+
+            carouseling = false;
+        }
+    }
 
     @Override
     protected void onAttachedToWindow() {
@@ -179,11 +271,24 @@ public class CarouselView extends FrameLayout {
             mAdapter.registerDataSetObserver(mDataSetObserver);
         }
 
-//        if (mAdapter != null) {
-//
-//            mUpdateHandler.post(mCarouselRunnable);
-//        }
+    }
 
+    @Override
+    protected void onVisibilityChanged(@NonNull View changedView, int visibility) {
+        super.onVisibilityChanged(changedView, visibility);
+        if (visibility == VISIBLE) {
+            onViewVisible();
+        } else {
+            onViewInvisible();
+        }
+    }
+
+    private void onViewVisible() {
+        startCarousel(false);
+    }
+
+    private void onViewInvisible() {
+        closeCarousel();
     }
 
     @Override
@@ -195,7 +300,7 @@ public class CarouselView extends FrameLayout {
             mDataSetObserver = null;
         }
 
-        mUpdateHandler.removeCallbacks(mCarouselRunnable);
+        closeCarousel();
     }
 
     private void setItemViewLayoutParams(View child, int position) {
@@ -224,7 +329,7 @@ public class CarouselView extends FrameLayout {
         @Override
         public void run() {
 
-            if (mAdapter == null) {
+            if (mAdapter == null || mAdapter.getCount() <= mAdapter.getItemViewCountOnSinglePage()) {
                 return;
             }
 

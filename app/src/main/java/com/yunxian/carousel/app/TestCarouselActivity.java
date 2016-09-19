@@ -1,5 +1,8 @@
 package com.yunxian.carousel.app;
 
+import android.content.Intent;
+import android.view.View;
+
 import com.yunxian.carousel.CarouselView;
 import com.yunxian.carousel.app.adapter.TestJustEnoughAdapter;
 import com.yunxian.carousel.app.adapter.TestNotEnoughAdapter;
@@ -33,6 +36,7 @@ public class TestCarouselActivity extends BaseFragmentActivity {
         mCarouselViewThree = findView(R.id.carousel_three);
         mCarouselViewFour = findView(R.id.carousel_four);
         mCarouselViewFive = findView(R.id.carousel_five);
+        findViewById(R.id.btn).setOnClickListener(mBaseCommonListener);
     }
 
     @Override
@@ -42,6 +46,20 @@ public class TestCarouselActivity extends BaseFragmentActivity {
         mCarouselViewThree.setAdapter(new TestOneLineAdapter(this));
         mCarouselViewFour.setAdapter(new TestTwoLineEnoughAdapter(this));
         mCarouselViewFive.setAdapter(new TestTwoLineNotEnoughAdapter(this));
+    }
+
+    @Override
+    public void onViewClick(View v) {
+        switch (v.getId()) {
+            case R.id.btn: {
+                Intent mIntent = new Intent(this, EmptyActivity.class);
+                startActivity(mIntent);
+                break;
+            }
+            default:
+                super.onViewClick(v);
+                break;
+        }
     }
 
     @Override
