@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- 轮播控件属性定义 -->
+    <declare-styleable name="CarouselView">
+        <!-- 轮播间隔时长 -->
+        <attr name="interval_duration" format="integer" />
+        <!-- 轮播进入动画 -->
+        <attr name="slide_in" format="reference" />
+        <!-- 轮播退出动画 -->
+        <attr name="slide_out" format="reference" />
+    </declare-styleable>
+
+</resources>

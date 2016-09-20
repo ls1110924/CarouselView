@@ -1,6 +1,7 @@
 package com.yunxian.carousel;
 
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.database.DataSetObserver;
 import android.os.Handler;
 import android.os.Looper;
@@ -23,7 +24,7 @@ public class CarouselView extends FrameLayout {
     private static final String TAG = CarouselView.class.getSimpleName();
 
     // 默认轮播间隔时长5秒钟
-    private static final int CAROUSEL_INTERVAL = 5000;
+    private static final int DEFAULT_CAROUSEL_INTERVAL = 400;
 
     // 主视图
     private LinearLayout mMainView;
@@ -57,8 +58,27 @@ public class CarouselView extends FrameLayout {
     public CarouselView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
 
-        mInAnimation = AnimationUtils.loadAnimation(context, R.anim.carousel_slide_bottom_in);
-        mOutAnimation = AnimationUtils.loadAnimation(context, R.anim.carousel_slide_bottom_out);
+        if (attrs != null) {
+            TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.CarouselView);
+
+            mCarouselInterval = a.getInteger(R.styleable.CarouselView_interval_duration, DEFAULT_CAROUSEL_INTERVAL);
+            if (mCarouselInterval < 0) {
+                mCarouselInterval = DEFAULT_CAROUSEL_INTERVAL;
+            }
+
+            int mAnimResID = a.getResourceId(R.styleable.CarouselView_slide_in, R.anim.carousel_slide_bottom_in);
+            mInAnimation = AnimationUtils.loadAnimation(context, mAnimResID);
+
+            mAnimResID = a.getResourceId(R.styleable.CarouselView_slide_out, R.anim.carousel_slide_bottom_out);
+            mOutAnimation = AnimationUtils.loadAnimation(context, mAnimResID);
+
+            a.recycle();
+        } else {
+            mCarouselInterval = DEFAULT_CAROUSEL_INTERVAL;
+
+            mInAnimation = AnimationUtils.loadAnimation(context, R.anim.carousel_slide_bottom_in);
+            mOutAnimation = AnimationUtils.loadAnimation(context, R.anim.carousel_slide_bottom_out);
+        }
 
         init(context);
     }
@@ -77,7 +97,6 @@ public class CarouselView extends FrameLayout {
                 new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.MATCH_PARENT));
 
-        mCarouselInterval = CAROUSEL_INTERVAL;
     }
 
     /**
@@ -213,7 +232,7 @@ public class CarouselView extends FrameLayout {
      */
     public void setCarouselInterval(int mCarouselInterval) {
         if (mCarouselInterval <= 0) {
-            mCarouselInterval = CAROUSEL_INTERVAL;
+            return;
         }
         if (this.mCarouselInterval == mCarouselInterval) {
             return;
@@ -329,6 +348,8 @@ public class CarouselView extends FrameLayout {
         @Override
         public void run() {
 
+            mUpdateHandler.removeCallbacks(mCarouselRunnable);
+
             if (mAdapter == null || mAdapter.getCount() <= mAdapter.getItemViewCountOnSinglePage()) {
                 return;
             }
@@ -372,21 +393,33 @@ public class CarouselView extends FrameLayout {
      */
     private class AdapterDataSetObserver extends DataSetObserver {
 
+        // 继续使用旧数据集
         @Override
         public void onChanged() {
             super.onChanged();
+
             reinit();
         }
 
+        // 清空数据集重建
         @Override
         public void onInvalidated() {
             super.onInvalidated();
+
             reinit();
         }
 
-        void reinit() {
+        private void reinit() {
+            mMainView.removeAllViews();
+            mMainView.setVisibility(VISIBLE);
 
+            mReserveView.removeAllViews();
+            mReserveView.setVisibility(INVISIBLE);
+
+            closeCarousel();
+            startCarousel(true);
         }
+
     }
 
     private CarouselView.ItemLayoutParams generateDefaultCarouselLayoutParams() {
