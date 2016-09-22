@@ -189,33 +189,47 @@ public class CarouselView extends FrameLayout {
      * @return 内容是否足够多，需要开启轮播通知
      */
     private boolean rebuildItemView(@NonNull CarouselAdapter mAdapter, boolean rebuild) {
-        mMainView.setWeightSum(mAdapter.getItemViewCountOnSinglePage());
-        mReserveView.setWeightSum(mAdapter.getItemViewCountOnSinglePage());
+        int sizeOfPage = mAdapter.getItemViewCountOnSinglePage();
+
+        mMainView.setWeightSum(sizeOfPage);
+        mReserveView.setWeightSum(sizeOfPage);
+
+        // 如果需要重建视图，且adapter配置的子视图数量大于1时
+        if (rebuild && mAdapter.getCount() > 0) {
+            mMainView.removeAllViews();
+            mReserveView.removeAllViews();
+
+            buildItemViewForContain(mMainView, sizeOfPage, mAdapter);
+            buildItemViewForContain(mReserveView, sizeOfPage, mAdapter);
+        }
 
         startIndex = 0;
 
-        if (mAdapter.getCount() <= mAdapter.getItemViewCountOnSinglePage()) {
-
-            if (rebuild) {
-                buildItemViewForContain(mMainView, startIndex, mAdapter.getCount(), mAdapter.getCount(), mAdapter);
-            } else {
-                fillItemView(mMainView, startIndex, mAdapter.getCount(), mAdapter.getCount(), mAdapter);
-            }
-
+        if (mAdapter.getCount() <= sizeOfPage) {
+            fillItemView(mMainView, startIndex, mAdapter.getCount(), sizeOfPage, mAdapter.getCount(), mAdapter);
             return false;
         } else {
-            final int pageCount = mAdapter.getItemViewCountOnSinglePage();
-
-            if (rebuild) {
-                buildItemViewForContain(mMainView, startIndex, pageCount, mAdapter.getCount(), mAdapter);
-                startIndex += pageCount;
-                buildItemViewForContain(mReserveView, startIndex, pageCount, mAdapter.getCount(), mAdapter);
-            } else {
-                fillItemView(mMainView, startIndex, pageCount, mAdapter.getCount(), mAdapter);
-                startIndex += pageCount;
-            }
-
+            fillItemView(mMainView, startIndex, sizeOfPage, mAdapter.getCount(), mAdapter);
+            startIndex += sizeOfPage;
             return true;
+        }
+    }
+
+    /**
+     * 不管Adapter是否能提供超过一页数量的子视图，都先初始化够足够的子视图，其后就只管复用子视图即可
+     *
+     * @param mContain  要添加子视图的容器
+     * @param pageCount 一页的子视图大小
+     * @param mAdapter  适配器对象
+     */
+    private void buildItemViewForContain(LinearLayout mContain, int pageCount, CarouselAdapter mAdapter) {
+        for (int i = 0; i < pageCount; i++) {
+            View mChildView = mAdapter.getView(0, null, mContain);
+            if (mChildView == null) {
+                throw new NullPointerException();
+            }
+            setItemViewLayoutParams(mChildView, 0);
+            mContain.addView(mChildView);
         }
     }
 
@@ -245,22 +259,46 @@ public class CarouselView extends FrameLayout {
     /**
      * 填充子视图内容
      *
-     * @param mContain 被填充子视图的容器
-     * @param start    起始索引值
-     * @param count    添加的子视图数量
-     * @param amount   子视图总数
-     * @param mAdapter 适配器对象
+     * @param mContain  被填充子视图的容器
+     * @param start     起始索引值
+     * @param pageCount 填充内容的子视图数量等于一页的子视图数量
+     * @param amount    子视图总数
+     * @param mAdapter  适配器对象
      */
-    private void fillItemView(LinearLayout mContain, int start, int count, int amount, CarouselAdapter mAdapter) {
+    private void fillItemView(LinearLayout mContain, int start, int pageCount, int amount, CarouselAdapter mAdapter) {
+        fillItemView(mContain, start, pageCount, pageCount, amount, mAdapter);
+    }
+
+    /**
+     * 填充子视图内容
+     *
+     * @param mContain  被填充子视图的容器
+     * @param start     起始索引值
+     * @param count     添加的子视图数量
+     * @param pageCount 每页有多少个子视图
+     * @param amount    子视图总数
+     * @param mAdapter  适配器对象
+     */
+    private void fillItemView(LinearLayout mContain, int start, int count, int pageCount, int amount, CarouselAdapter mAdapter) {
 
         for (int i = 0; i < count; i++) {
             int itemIndex = (start + i) % amount;
             View mChildView = mContain.getChildAt(i);
-            mChildView = mAdapter.getView(itemIndex, mChildView, mContain);
-            if (mChildView == null) {
+            View mNewChildView = mAdapter.getView(itemIndex, mChildView, mContain);
+            if (mNewChildView == null) {
                 throw new NullPointerException();
             }
-            setItemViewLayoutParams(mChildView, itemIndex);
+            // 加入Adapter的实现方未复用子视图，则用新的子视图手动替换旧子视图
+            if (mNewChildView != mChildView) {
+                mContain.removeViewAt(i);
+                mContain.addView(mNewChildView, i);
+            }
+            setItemViewLayoutParams(mNewChildView, itemIndex);
+        }
+
+        // 隐藏多余的视图
+        for (int i = count; i < pageCount; i++) {
+            mContain.getChildAt(i).setVisibility(GONE);
         }
 
     }
@@ -449,7 +487,11 @@ public class CarouselView extends FrameLayout {
         public void onChanged() {
             super.onChanged();
 
-            reinit();
+            mMainView.setVisibility(VISIBLE);
+            mReserveView.setVisibility(INVISIBLE);
+
+            closeCarousel();
+            startCarousel(false);
         }
 
         // 清空数据集重建
@@ -457,14 +499,7 @@ public class CarouselView extends FrameLayout {
         public void onInvalidated() {
             super.onInvalidated();
 
-            reinit();
-        }
-
-        private void reinit() {
-            mMainView.removeAllViews();
             mMainView.setVisibility(VISIBLE);
-
-            mReserveView.removeAllViews();
             mReserveView.setVisibility(INVISIBLE);
 
             closeCarousel();
@@ -473,7 +508,7 @@ public class CarouselView extends FrameLayout {
 
     }
 
-    private class CommonCallbackListener implements OnClickListener, OnLongClickListener{
+    private class CommonCallbackListener implements OnClickListener, OnLongClickListener {
 
         @Override
         public void onClick(View view) {
