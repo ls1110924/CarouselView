@@ -16,7 +16,7 @@ import java.util.Locale;
 
 /**
  * @author A Shuai
- * @email lishuai.ls@alibaba-inc.com
+ * @email ls1110924@163.com
  * @date 2016/9/19 2:00
  */
 public class TestTwoLineNotEnoughAdapter extends BaseCarouselAdapter{

@@ -4,7 +4,7 @@ import com.yunxian.carousel.app.utils.BaseFragmentActivity;
 
 /**
  * @author A Shuai
- * @email lishuai.ls@alibaba-inc.com
+ * @email ls1110924@163.com
  * @date 2016/9/19 23:37
  */
 public class EmptyActivity extends BaseFragmentActivity{

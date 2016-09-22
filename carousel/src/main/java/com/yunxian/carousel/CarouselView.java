@@ -15,8 +15,10 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 
 /**
+ * 公告轮播前控件
+ *
  * @author A Shuai
- * @email lishuai.ls@alibaba-inc.com
+ * @email ls1110924@163.com
  * @date 2016/9/18 17:03
  */
 public class CarouselView extends FrameLayout {
@@ -24,7 +26,7 @@ public class CarouselView extends FrameLayout {
     private static final String TAG = CarouselView.class.getSimpleName();
 
     // 默认轮播间隔时长5秒钟
-    private static final int DEFAULT_CAROUSEL_INTERVAL = 400;
+    private static final int DEFAULT_CAROUSEL_INTERVAL = 5000;
 
     // 主视图
     private LinearLayout mMainView;

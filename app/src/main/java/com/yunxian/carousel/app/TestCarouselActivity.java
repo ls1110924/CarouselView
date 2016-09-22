@@ -19,7 +19,7 @@ import java.util.Locale;
 
 /**
  * @author A Shuai
- * @email lishuai.ls@alibaba-inc.com
+ * @email ls1110924@163.com
  * @date 2016/9/19 0:30
  */
 public class TestCarouselActivity extends BaseFragmentActivity {
@@ -77,7 +77,7 @@ public class TestCarouselActivity extends BaseFragmentActivity {
                 startActivity(mIntent);
                 break;
             }
-            case R.id.btn_notify:{
+            case R.id.btn_notify: {
                 for (int i = startIndex; i < startIndex + 2; i++) {
                     mCustomData.add(String.format(Locale.US, "Test--->%1$d", i));
                 }

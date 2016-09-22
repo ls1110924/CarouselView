@@ -8,7 +8,7 @@ import android.view.ViewGroup;
  * 轮播图适配器
  *
  * @author A Shuai
- * @email lishuai.ls@alibaba-inc.com
+ * @email ls1110924@163.com
  * @date 2016/9/18 17:32
  */
 public interface CarouselAdapter {

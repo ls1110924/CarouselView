@@ -14,7 +14,7 @@ import java.util.List;
 
 /**
  * @author A Shuai
- * @email lishuai.ls@alibaba-inc.com
+ * @email ls1110924@163.com
  * @date 2016/9/20 23:48
  */
 public class TestCustomAdapter extends BaseCarouselAdapter{

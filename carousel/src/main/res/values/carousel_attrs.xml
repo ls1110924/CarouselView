@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- 轮播控件属性定义 -->
+    <!-- 公告轮播控件属性定义 -->
     <declare-styleable name="CarouselView">
         <!-- 轮播间隔时长 -->
         <attr name="interval_duration" format="integer" />
