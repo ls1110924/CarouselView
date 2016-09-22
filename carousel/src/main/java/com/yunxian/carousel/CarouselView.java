@@ -6,6 +6,7 @@ import android.database.DataSetObserver;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
+import android.support.v4.view.ViewCompat;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewGroup;
@@ -32,6 +33,10 @@ public class CarouselView extends FrameLayout {
     private LinearLayout mMainView;
     // 备用视图
     private LinearLayout mReserveView;
+
+    private final CommonCallbackListener mCommonListener = new CommonCallbackListener();
+    // item事件监听器
+    private OnItemClickListener mOnItemClickListener;
 
     private CarouselAdapter mAdapter;
     private DataSetObserver mDataSetObserver;
@@ -99,6 +104,49 @@ public class CarouselView extends FrameLayout {
                 new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.MATCH_PARENT));
 
+    }
+
+    /**
+     * 公告轮播器控件的item点击事件监听器
+     */
+    public interface OnItemClickListener {
+
+        /**
+         * 当公告轮播器控件中的一条item被点击时触发的回调方法
+         *
+         * @param parent   轮播器控件自己
+         * @param view     被点击了item view
+         * @param position 位置索引
+         * @param id       行号，一般等同于position
+         */
+        void onItemClick(CarouselView parent, View view, int position, long id);
+
+        /**
+         * 当公告轮播器控件中的一条item被长按时触发的回调方法
+         *
+         * @param parent   轮播器控件自己
+         * @param view     被长按了的item view
+         * @param position 位置索引
+         * @param id       行号，一般等同于position
+         * @return true表示消费了该长按事件，否则为false
+         */
+        boolean onItemLongClick(CarouselView parent, View view, int position, long id);
+
+    }
+
+    /**
+     * 设置处理item的事件监听器
+     * <p>
+     * 注意item的事件监听器与{@link #setOnClickListener(OnClickListener)}轮播器控件的点击事件冲突，
+     * 二者只可取其一。
+     *
+     * @param mOnItemClickListener item事件监听器
+     */
+    public void setOnItemClickListener(OnItemClickListener mOnItemClickListener) {
+        if (ViewCompat.hasOnClickListeners(this)) {
+            throw new IllegalStateException("the OnItemClickListener and the OnClickListener must be set one of them!");
+        }
+        this.mOnItemClickListener = mOnItemClickListener;
     }
 
     /**
@@ -244,6 +292,7 @@ public class CarouselView extends FrameLayout {
         closeCarousel();
         startCarousel(false);
     }
+
 
     // 是否正在轮播状态的标记变量
     private volatile boolean carouseling = false;
@@ -422,6 +471,19 @@ public class CarouselView extends FrameLayout {
             startCarousel(true);
         }
 
+    }
+
+    private class CommonCallbackListener implements OnClickListener, OnLongClickListener{
+
+        @Override
+        public void onClick(View view) {
+
+        }
+
+        @Override
+        public boolean onLongClick(View view) {
+            return false;
+        }
     }
 
     private CarouselView.ItemLayoutParams generateDefaultCarouselLayoutParams() {
