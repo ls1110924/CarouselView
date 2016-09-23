@@ -69,7 +69,7 @@ public class TestCarouselActivity extends BaseFragmentActivity {
         for (int i = startIndex; i < startIndex + 3; i++) {
             mCustomData.add(String.format(Locale.US, "Test--->%1$d", i));
         }
-        startIndex += 2;
+        startIndex += 3;
         mCustomAdapter = new TestCustomAdapter(this, mCustomData);
         mCarouselViewSix.setAdapter(mCustomAdapter);
         mCarouselViewSix.setOnItemClickListener(mCommonListener);
