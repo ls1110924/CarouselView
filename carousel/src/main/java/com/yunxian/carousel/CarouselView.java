@@ -143,6 +143,14 @@ public class CarouselView extends FrameLayout {
      * @param mOnItemClickListener item事件监听器
      */
     public void setOnItemClickListener(OnItemClickListener mOnItemClickListener) {
+        // 如果待设置的ItemView点击事件监听器为空，表示要清空点击事件监听器
+        if (mOnItemClickListener == null) {
+            this.mOnItemClickListener = null;
+            iterateClearItemViewOnClickListener(mMainView);
+            iterateClearItemViewOnClickListener(mReserveView);
+            return;
+        }
+
         if (ViewCompat.hasOnClickListeners(this)) {
             throw new IllegalStateException("the OnItemClickListener and the OnClickListener must be set one of them!");
         }
@@ -338,6 +346,8 @@ public class CarouselView extends FrameLayout {
                 mContain.addView(mNewChildView, i);
             }
             setItemViewLayoutParams(mNewChildView, itemIndex);
+
+            mNewChildView.setVisibility(VISIBLE);
         }
 
         // 隐藏多余的视图
