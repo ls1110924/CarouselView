@@ -147,6 +147,67 @@ public class CarouselView extends FrameLayout {
             throw new IllegalStateException("the OnItemClickListener and the OnClickListener must be set one of them!");
         }
         this.mOnItemClickListener = mOnItemClickListener;
+
+        iterateSetItemViewOnClickListener(mMainView);
+        iterateSetItemViewOnClickListener(mReserveView);
+    }
+
+    /**
+     * 覆写公告轮播器控件的设置点击事件监听器，保证轮播器监听器与Item监听器只有一个
+     *
+     * @param l 公告轮播器控件点击事件监听器
+     */
+    @Override
+    public void setOnClickListener(OnClickListener l) {
+        if (mOnItemClickListener != null) {
+            throw new IllegalStateException("the OnItemClickListener and the OnClickListener must be set one of them!");
+        }
+        super.setOnClickListener(l);
+
+        iterateClearItemViewOnClickListener(mMainView);
+        iterateClearItemViewOnClickListener(mReserveView);
+    }
+
+    /**
+     * 迭代给ItemView设置点击和长按监听器
+     *
+     * @param mContain 容器
+     */
+    private void iterateSetItemViewOnClickListener(LinearLayout mContain) {
+        for (int i = 0; i < mContain.getChildCount(); i++) {
+            View mChildView = mContain.getChildAt(i);
+            mChildView.setOnClickListener(mCommonListener);
+            mChildView.setOnLongClickListener(mCommonListener);
+        }
+    }
+
+    /**
+     * 迭代给ItemView设置点击和长按监听器
+     *
+     * @param mContain 容器
+     */
+    private void iterateClearItemViewOnClickListener(LinearLayout mContain) {
+        for (int i = 0; i < mContain.getChildCount(); i++) {
+            View mChildView = mContain.getChildAt(i);
+            mChildView.setOnClickListener(null);
+            mChildView.setOnLongClickListener(null);
+            mChildView.setClickable(false);
+        }
+    }
+
+    private void performOnItemClick(View mChildView) {
+        if (mOnItemClickListener != null) {
+            ItemLayoutParams lp = (ItemLayoutParams) mChildView.getLayoutParams();
+            mOnItemClickListener.onItemClick(this, mChildView, lp.position, lp.itemId);
+        }
+    }
+
+    private boolean performOnItemLongClick(View mChildView) {
+        if (mCommonListener != null) {
+            ItemLayoutParams lp = (ItemLayoutParams) mChildView.getLayoutParams();
+            return mOnItemClickListener.onItemLongClick(this, mChildView, lp.position, lp.itemId);
+        }
+        return false;
     }
 
     /**
@@ -229,31 +290,14 @@ public class CarouselView extends FrameLayout {
                 throw new NullPointerException();
             }
             setItemViewLayoutParams(mChildView, 0);
-            mContain.addView(mChildView);
-        }
-    }
 
-    /**
-     * 构建子视图
-     *
-     * @param mContain 被填充子视图的容器
-     * @param start    起始索引值
-     * @param count    添加的子视图数量
-     * @param amount   子视图总数
-     * @param mAdapter 适配器对象
-     */
-    private void buildItemViewForContain(LinearLayout mContain, int start, int count, int amount, CarouselAdapter mAdapter) {
-
-        for (int i = 0; i < count; i++) {
-            int itemIndex = (start + i) % amount;
-            View mChildView = mAdapter.getView(itemIndex, null, mContain);
-            if (mChildView == null) {
-                throw new NullPointerException();
+            if (mOnItemClickListener != null) {
+                mChildView.setOnClickListener(mCommonListener);
+                mChildView.setOnLongClickListener(mCommonListener);
             }
-            setItemViewLayoutParams(mChildView, itemIndex);
+
             mContain.addView(mChildView);
         }
-
     }
 
     /**
@@ -423,6 +467,7 @@ public class CarouselView extends FrameLayout {
         }
 
         lp.weight = 1;
+        lp.position = position;
         lp.itemId = mAdapter.getItemId(position);
         if (lp != vlp) {
             child.setLayoutParams(lp);
@@ -512,12 +557,12 @@ public class CarouselView extends FrameLayout {
 
         @Override
         public void onClick(View view) {
-
+            performOnItemClick(view);
         }
 
         @Override
         public boolean onLongClick(View view) {
-            return false;
+            return performOnItemLongClick(view);
         }
     }
 
@@ -539,6 +584,7 @@ public class CarouselView extends FrameLayout {
      */
     public static class ItemLayoutParams extends LinearLayout.LayoutParams {
 
+        int position;
         long itemId;
 
         public ItemLayoutParams(Context c, AttributeSet attrs) {
