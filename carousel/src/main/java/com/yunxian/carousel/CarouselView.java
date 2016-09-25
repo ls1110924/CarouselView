@@ -33,6 +33,8 @@ public class CarouselView extends FrameLayout {
     private LinearLayout mMainView;
     // 备用视图
     private LinearLayout mReserveView;
+	// 是否已经填充了子视图
+    private volatile boolean fillChildViewFlag = false;
 
     private final CommonCallbackListener mCommonListener = new CommonCallbackListener();
     // item事件监听器
@@ -263,13 +265,15 @@ public class CarouselView extends FrameLayout {
         mMainView.setWeightSum(sizeOfPage);
         mReserveView.setWeightSum(sizeOfPage);
 
-        // 如果需要重建视图，且adapter配置的子视图数量大于1时
-        if (rebuild && mAdapter.getCount() > 0) {
+        // 如果需要重建视图或视图尚未初始化，且adapter配置的子视图数量大于1时
+        if ((rebuild || !fillChildViewFlag) && mAdapter.getCount() > 0) {
             mMainView.removeAllViews();
             mReserveView.removeAllViews();
 
             buildItemViewForContain(mMainView, sizeOfPage, mAdapter);
             buildItemViewForContain(mReserveView, sizeOfPage, mAdapter);
+
+            fillChildViewFlag = true;
         }
 
         startIndex = 0;
@@ -352,7 +356,10 @@ public class CarouselView extends FrameLayout {
 
         // 隐藏多余的视图
         for (int i = count; i < pageCount; i++) {
-            mContain.getChildAt(i).setVisibility(GONE);
+            View mChildView = mContain.getChildAt(i);
+            if (mChildView != null) {
+                mChildView.setVisibility(GONE);
+            }
         }
 
     }
