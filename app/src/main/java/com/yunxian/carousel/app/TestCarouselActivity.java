@@ -3,10 +3,12 @@ package com.yunxian.carousel.app;
 import android.content.Intent;
 import android.util.Log;
 import android.view.View;
+import android.widget.Toast;
 
 import com.yunxian.carousel.BaseCarouselAdapter;
 import com.yunxian.carousel.CarouselView;
 import com.yunxian.carousel.app.adapter.TestCustomAdapter;
+import com.yunxian.carousel.app.adapter.TestCustomTaobaoAdapter;
 import com.yunxian.carousel.app.adapter.TestJustEnoughAdapter;
 import com.yunxian.carousel.app.adapter.TestNotEnoughAdapter;
 import com.yunxian.carousel.app.adapter.TestOneLineAdapter;
@@ -33,6 +35,7 @@ public class TestCarouselActivity extends BaseFragmentActivity {
     private CarouselView mCarouselViewFour;
     private CarouselView mCarouselViewFive;
     private CarouselView mCarouselViewSix;
+    private CarouselView mCarouselViewSeven;
 
     private int startIndex;
     private final List<String> mCustomData = new ArrayList<>();
@@ -53,6 +56,7 @@ public class TestCarouselActivity extends BaseFragmentActivity {
         mCarouselViewFour = findView(R.id.carousel_four);
         mCarouselViewFive = findView(R.id.carousel_five);
         mCarouselViewSix = findView(R.id.carousel_six);
+        mCarouselViewSeven = findView(R.id.carousel_seven);
         findViewById(R.id.btn).setOnClickListener(mBaseCommonListener);
         findViewById(R.id.btn_notify).setOnClickListener(mBaseCommonListener);
     }
@@ -72,7 +76,9 @@ public class TestCarouselActivity extends BaseFragmentActivity {
         startIndex += 3;
         mCustomAdapter = new TestCustomAdapter(this, mCustomData);
         mCarouselViewSix.setAdapter(mCustomAdapter);
-        mCarouselViewSix.setOnItemClickListener(mCommonListener);
+
+        mCarouselViewSeven.setAdapter(new TestCustomTaobaoAdapter(this));
+        mCarouselViewSeven.setOnItemClickListener(mCommonListener);
     }
 
     @Override
@@ -108,6 +114,7 @@ public class TestCarouselActivity extends BaseFragmentActivity {
         @Override
         public void onItemClick(CarouselView parent, View view, int position, long id) {
             Log.d(TAG, "Click--->" + position);
+            Toast.makeText(TestCarouselActivity.this, "Click--->" + position, Toast.LENGTH_SHORT).show();
         }
 
         @Override
