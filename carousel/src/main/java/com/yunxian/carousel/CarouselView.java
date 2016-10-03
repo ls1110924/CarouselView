@@ -16,7 +16,10 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 
 /**
- * 公告轮播前控件
+ * 公告轮播器控件
+ * <p>
+ * 注意：<font color="red">该公告轮播器控件对于轮播器控件本身的点击事件监听器
+ * 和ItemView的点击事件监听器冲突，只可选择绑定其中一个</font>
  *
  * @author A Shuai
  * @email ls1110924@163.com
@@ -33,8 +36,6 @@ public class CarouselView extends FrameLayout {
     private LinearLayout mMainView;
     // 备用视图
     private LinearLayout mReserveView;
-	// 是否已经填充了子视图
-    private volatile boolean fillChildViewFlag = false;
 
     private final CommonCallbackListener mCommonListener = new CommonCallbackListener();
     // item事件监听器
@@ -96,14 +97,14 @@ public class CarouselView extends FrameLayout {
         mMainView = new LinearLayout(context);
         mMainView.setOrientation(LinearLayout.VERTICAL);
         addView(mMainView,
-                new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.MATCH_PARENT));
 
         mReserveView = new LinearLayout(context);
         mReserveView.setOrientation(LinearLayout.VERTICAL);
         mReserveView.setVisibility(INVISIBLE);
         addView(mReserveView,
-                new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.MATCH_PARENT));
 
     }
@@ -145,7 +146,7 @@ public class CarouselView extends FrameLayout {
      * @param mOnItemClickListener item事件监听器
      */
     public void setOnItemClickListener(OnItemClickListener mOnItemClickListener) {
-        // 如果待设置的ItemView点击事件监听器为空，表示要清空点击事件监听器
+        // 如果形参为空，表示要清除ItemView的点击事件监听器
         if (mOnItemClickListener == null) {
             this.mOnItemClickListener = null;
             iterateClearItemViewOnClickListener(mMainView);
@@ -192,7 +193,7 @@ public class CarouselView extends FrameLayout {
     }
 
     /**
-     * 迭代给ItemView设置点击和长按监听器
+     * 迭代给ItemView清除点击和长按监听器
      *
      * @param mContain 容器
      */
@@ -266,14 +267,12 @@ public class CarouselView extends FrameLayout {
         mReserveView.setWeightSum(sizeOfPage);
 
         // 如果需要重建视图或视图尚未初始化，且adapter配置的子视图数量大于1时
-        if ((rebuild || !fillChildViewFlag) && mAdapter.getCount() > 0) {
+        if (rebuild) {
             mMainView.removeAllViews();
             mReserveView.removeAllViews();
 
             buildItemViewForContain(mMainView, sizeOfPage, mAdapter);
             buildItemViewForContain(mReserveView, sizeOfPage, mAdapter);
-
-            fillChildViewFlag = true;
         }
 
         startIndex = 0;
@@ -297,10 +296,7 @@ public class CarouselView extends FrameLayout {
      */
     private void buildItemViewForContain(LinearLayout mContain, int pageCount, CarouselAdapter mAdapter) {
         for (int i = 0; i < pageCount; i++) {
-            View mChildView = mAdapter.getView(0, null, mContain);
-            if (mChildView == null) {
-                throw new NullPointerException();
-            }
+            View mChildView = mAdapter.createView(mContain);
             setItemViewLayoutParams(mChildView, 0);
 
             if (mOnItemClickListener != null) {
@@ -340,18 +336,9 @@ public class CarouselView extends FrameLayout {
         for (int i = 0; i < count; i++) {
             int itemIndex = (start + i) % amount;
             View mChildView = mContain.getChildAt(i);
-            View mNewChildView = mAdapter.getView(itemIndex, mChildView, mContain);
-            if (mNewChildView == null) {
-                throw new NullPointerException();
-            }
-            // 加入Adapter的实现方未复用子视图，则用新的子视图手动替换旧子视图
-            if (mNewChildView != mChildView) {
-                mContain.removeViewAt(i);
-                mContain.addView(mNewChildView, i);
-            }
-            setItemViewLayoutParams(mNewChildView, itemIndex);
-
-            mNewChildView.setVisibility(VISIBLE);
+            mAdapter.fillView(itemIndex, mChildView);
+            setItemViewLayoutParams(mChildView, itemIndex);
+            mChildView.setVisibility(VISIBLE);
         }
 
         // 隐藏多余的视图
@@ -583,17 +570,17 @@ public class CarouselView extends FrameLayout {
         }
     }
 
-    private CarouselView.ItemLayoutParams generateDefaultCarouselLayoutParams() {
-        return new CarouselView.ItemLayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+    private ItemLayoutParams generateDefaultCarouselLayoutParams() {
+        return new ItemLayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT, 0);
     }
 
-    private CarouselView.ItemLayoutParams generateCarouselLayoutParams(ViewGroup.LayoutParams p) {
+    private ItemLayoutParams generateCarouselLayoutParams(ViewGroup.LayoutParams p) {
         return new ItemLayoutParams(p);
     }
 
     private boolean checkItemLayoutParams(ViewGroup.LayoutParams p) {
-        return p instanceof CarouselView.ItemLayoutParams;
+        return p instanceof ItemLayoutParams;
     }
 
     /**
@@ -601,7 +588,9 @@ public class CarouselView extends FrameLayout {
      */
     public static class ItemLayoutParams extends LinearLayout.LayoutParams {
 
+        // 在公告列表中位置索引
         int position;
+        // 该位置索引数据对应在Adapter中的ID
         long itemId;
 
         public ItemLayoutParams(Context c, AttributeSet attrs) {

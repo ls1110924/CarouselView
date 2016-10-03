@@ -4,7 +4,7 @@ import android.database.DataSetObservable;
 import android.database.DataSetObserver;
 
 /**
- * 轮播图适配器的公共基础实现类
+ * 公告轮播器适配器的公共基础实现类
  *
  * @author A Shuai
  * @email ls1110924@163.com
