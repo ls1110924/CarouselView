@@ -7,7 +7,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import com.yunxian.carousel.BaseCarouselAdapter;
+import com.yunxian.carousel.AbsBasicCarouselAdapter;
 import com.yunxian.carousel.app.R;
 
 import java.util.List;
@@ -17,13 +17,12 @@ import java.util.List;
  * @email ls1110924@163.com
  * @date 2016/9/20 23:48
  */
-public class TestCustomAdapter extends BaseCarouselAdapter{
+public class TestCustomAdapter extends AbsBasicCarouselAdapter<TestCustomAdapter.ViewHolder> {
 
-    private final LayoutInflater mInflater;
     private final List<String> mDataSet;
 
     public TestCustomAdapter(@NonNull Context mContext, @NonNull List<String> mDataSet) {
-        mInflater = LayoutInflater.from(mContext);
+        super(mContext);
         this.mDataSet = mDataSet;
     }
 
@@ -37,25 +36,26 @@ public class TestCustomAdapter extends BaseCarouselAdapter{
         return mDataSet.get(position);
     }
 
+    @NonNull
     @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
-        ViewHolder mViewHolder;
+    protected View inflaterView(LayoutInflater mInflater, @NonNull ViewGroup parent) {
+        return mInflater.inflate(R.layout.item_carousel, parent, false);
+    }
 
-        if (convertView == null) {
-            mViewHolder = new ViewHolder();
+    @NonNull
+    @Override
+    protected ViewHolder buildViewHolder() {
+        return new ViewHolder();
+    }
 
-            convertView = mInflater.inflate(R.layout.item_carousel, parent, false);
-            mViewHolder.mTV = (TextView) convertView.findViewById(R.id.textview);
+    @Override
+    protected void findViews(View convertView, ViewHolder mViewHolder) {
+        mViewHolder.mTV = (TextView) convertView.findViewById(R.id.textview);
+    }
 
-            convertView.setTag(mViewHolder);
-
-        } else {
-            mViewHolder = (ViewHolder) convertView.getTag();
-        }
-
+    @Override
+    protected void bindContent(int position, ViewHolder mViewHolder) {
         mViewHolder.mTV.setText(mDataSet.get(position));
-
-        return convertView;
     }
 
     @Override
@@ -63,7 +63,7 @@ public class TestCustomAdapter extends BaseCarouselAdapter{
         return 2;
     }
 
-    private static class ViewHolder {
+    public static class ViewHolder extends AbsBasicCarouselAdapter.ViewHolder {
 
         TextView mTV;
 
